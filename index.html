@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pharmacy Helper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00BCD4;
+            --primary-light: #E0F7FA;
+            --primary-dark: #0097A7;
+            --deep-dark: #006064;
+            --accent-color: #00E5FF;
+            --bg-color: #F5F9FA;
+            --surface-color: #ffffff;
+            --text-main: #263238;
+            --text-secondary: #607D8B;
+            --bottom-nav-bg: #ffffff;
+            --danger-color: #FF5252;
+            --online-green: #4CAF50;
+            --chat-bg: #ECE5DD; /* Standard messenger background */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #e0e0e0;
+            display: flex; justify-content: center; min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%; max-width: 412px; height: 100vh; max-height: 915px;
+            background-color: var(--bg-color); position: relative; overflow: hidden;
+            display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        /* --- Navigation Drawer (Menu) --- */
+        .drawer-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .app-drawer { position: absolute; top: 0; left: 0; width: 85%; max-width: 320px; height: 100%; background-color: var(--surface-color); z-index: 60; transform: translateX(-100%); transition: transform 0.3s ease-in-out; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
+        .app-drawer.open { transform: translateX(0); }
+
+        .drawer-header { background: linear-gradient(135deg, var(--primary-color), var(--deep-dark)); padding: 24px 20px; color: white; display: flex; flex-direction: column; gap: 12px; }
+        .profile-top { display: flex; align-items: center; gap: 16px; }
+        .profile-img-large { width: 64px; height: 64px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,0.8); flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .profile-img-large .material-icons { font-size: 36px; color: var(--primary-color); }
+        .header-text { flex-grow: 1; }
+        .header-text .welcome-text { font-size: 12px; opacity: 0.9; display: block; margin-bottom: 2px; }
+        .header-text .student-name { font-size: 20px; font-weight: 700; display: block; margin-bottom: 6px; }
+        
+        .id-row { display: flex; align-items: center; gap: 8px; }
+        .student-id-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+        .copy-icon-btn { cursor: pointer; display: flex; align-items: center; opacity: 0.8; transition: opacity 0.2s; }
+        .copy-icon-btn:active { opacity: 1; }
+
+        .course-selector-box { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.2); padding: 10px 14px; border-radius: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s; }
+        .course-selector-box:active { background: rgba(255, 255, 255, 0.25); }
+        .course-selector-box .material-icons { font-size: 20px; color: white; }
+        .selector-info { flex-grow: 1; display: flex; flex-direction: column; }
+        .selector-info .label { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+        .selector-info .value { font-size: 14px; font-weight: 600; }
+        .course-selector-box .expand-icon { font-size: 20px; opacity: 0.8; }
+
+        .drawer-menu { flex-grow: 1; padding: 8px 0; overflow-y: auto; }
+        .drawer-item { display: flex; align-items: center; padding: 14px 20px; cursor: pointer; transition: background 0.2s; }
+        .drawer-item:active { background-color: var(--primary-light); }
+        .drawer-item .material-icons { color: var(--text-secondary); margin-right: 24px; font-size: 24px; }
+        .drawer-item span { font-size: 15px; color: var(--text-main); font-weight: 500; }
+        .drawer-footer { border-top: 1px solid #eee; padding: 8px 0; }
+        .drawer-item.logout .material-icons, .drawer-item.logout span { color: var(--danger-color); }
+
+        /* --- Main App UI --- */
+        .app-bar { background-color: var(--primary-color); color: white; padding: 12px 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; position: relative; flex-shrink: 0; }
+        .app-bar .icon-btn { font-size: 24px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
+        .app-bar .icon-btn:active { background: rgba(255,255,255,0.2); }
+        .app-bar h1 { font-size: 20px; font-weight: 500; text-align: center; flex-grow: 1; pointer-events: none; }
+
+        .quick-action-icon { position: relative; cursor: pointer; padding: 6px; border-radius: 50%; transition: background 0.2s; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; }
+        .quick-action-icon:active { background: rgba(255,255,255,0.2); }
+        .custom-logo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        .action-dropdown { position: absolute; top: 60px; right: 12px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 20; width: 200px; overflow: visible; display: none; }
+        .action-dropdown.show { display: block; }
+        .action-dropdown::after { content: ''; position: absolute; bottom: 100%; right: 14px; border-width: 6px; border-style: solid; border-color: transparent transparent #ffffff transparent; }
+        .dropdown-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; transition: background 0.2s; }
+        .dropdown-item:active { background-color: var(--primary-light); }
+        .dropdown-item .material-icons { color: var(--primary-color); font-size: 20px; margin-right: 12px; }
+        .dropdown-item svg { width: 20px; height: 20px; margin-right: 12px; fill: var(--primary-color); }
+        .dropdown-item span { font-size: 14px; color: var(--text-main); font-weight: 500; }
+
+        /* Content Area - Flexbox Fix */
+        .content { flex-grow: 1; overflow: hidden; padding: 0; position: relative; background-color: var(--bg-color); padding-bottom: 60px; /* Space for bottom nav */ }
+        
+        .view { display: none; height: 100%; flex-direction: column; }
+        .view.active { display: flex; }
+        
+        .scroll-view { overflow-y: auto; padding: 16px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .greeting-card { background: linear-gradient(135deg, var(--deep-dark), var(--primary-dark)); color: white; padding: 20px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); transition: opacity 0.5s ease, max-height 0.5s ease, margin-bottom 0.5s ease, padding 0.5s ease; max-height: 120px; }
+        .greeting-card.hide { opacity: 0; max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+        .greeting-card p { font-size: 14px; opacity: 0.9; }
+        .greeting-card h2 { font-size: 24px; font-weight: 500; margin-top: 4px; }
+
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .grid-item { background-color: var(--surface-color); padding: 16px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: transform 0.1s; cursor: pointer; }
+        .grid-item:active { transform: scale(0.98); }
+        .grid-item .material-icons { font-size: 32px; color: var(--primary-color); margin-bottom: 8px; background: var(--primary-light); padding: 12px; border-radius: 50%; }
+        .grid-item span { font-size: 14px; font-weight: 500; color: var(--text-main); }
+
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; margin-top: 8px; }
+        .section-header h3 { font-size: 18px; font-weight: 500; color: var(--text-main); }
+        .section-header .see-all { font-size: 14px; color: var(--primary-dark); font-weight: 600; cursor: pointer; }
+
+        .announcement-carousel { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .announcement-carousel::-webkit-scrollbar { display: none; }
+        .announcement-card { min-width: 260px; background-color: var(--surface-color); border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); scroll-snap-align: start; border-top: 4px solid var(--primary-color); }
+        .announcement-card .card-header { display: flex; align-items: center; margin-bottom: 8px; }
+        .announcement-card .material-icons { color: var(--primary-color); font-size: 20px; margin-right: 8px; }
+        .announcement-card h4 { font-size: 16px; color: var(--text-main); }
+        .announcement-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.4; }
+
+        /* --- Courses Section --- */
+        .course-tabs { display: flex; background: white; border-radius: 12px; padding: 4px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .course-tab { flex-grow: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; color: var(--text-secondary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .course-tab.active { background: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        .course-card-full { background: white; padding: 16px; border-radius: 16px; margin-bottom: 12px; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .course-icon-lg { width: 56px; height: 56px; background: var(--primary-light); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0; }
+        .course-icon-lg .material-icons { color: var(--primary-dark); font-size: 28px; }
+        .course-info { flex-grow: 1; }
+        .course-info h4 { font-size: 16px; color: var(--text-main); margin-bottom: 6px; }
+        .progress-container { width: 100%; height: 6px; background: #eee; border-radius: 3px; margin-bottom: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--primary-color); border-radius: 3px; }
+        .course-info span { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+        .course-action-btn { background: var(--primary-color); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; border: none; cursor: pointer; margin-left: 12px; }
+        .course-action-btn-outline { background: transparent; border: 1.5px solid var(--primary-color); color: var(--primary-dark); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; margin-left: 12px; }
+        .explore-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+
+        /* --- Chat View Container (Edge-to-Edge) --- */
+        #chatView { padding: 0 !important; }
+        .chat-tabs { margin: 16px; flex-shrink: 0; background: white; border-radius: 12px; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; }
+        .chat-tab { flex-grow: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; color: var(--text-secondary); border-radius: 8px; cursor: pointer; transition: all 0.2s; position: relative; }
+        .chat-tab.active { color: var(--primary-color); background: var(--primary-light); }
+        .chat-tab:first-child::after { content: ''; position: absolute; right: 0; top: 20%; height: 60%; width: 1px; background: #ddd; }
+        .chat-tab-content { flex-grow: 1; display: none; flex-direction: column; overflow: hidden; }
+        .chat-tab-content.active { display: flex; animation: fadeIn 0.3s; }
+
+        .messenger-list { background: white; overflow-y: auto; box-shadow: none; flex-grow: 1; border-radius: 0; }
+        .messenger-item { display: flex; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: background 0.2s; }
+        .messenger-item:active { background: #f9f9f9; }
+        .messenger-item:last-child { border-bottom: none; }
+        .chat-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0; position: relative; }
+        .chat-avatar .material-icons { font-size: 28px; color: var(--primary-dark); }
+        .online-dot { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background: var(--online-green); border-radius: 50%; border: 2px solid white; }
+        .chat-content { flex-grow: 1; }
+        .chat-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .chat-name { font-size: 15px; font-weight: 600; color: var(--text-main); }
+        .chat-time { font-size: 11px; color: var(--text-secondary); }
+        .chat-bottom-row { display: flex; justify-content: space-between; align-items: center; }
+        .chat-last-msg { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .unread-badge { background: var(--primary-color); color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+        .highlight-chat-item .chat-avatar { background: var(--primary-color); }
+        .highlight-chat-item .chat-avatar .material-icons { color: white; }
+        .highlight-chat-item .chat-name { color: var(--primary-dark); }
+
+        /* --- Doubt Points Wallet Card --- */
+        .wallet-card { margin: 16px; background: linear-gradient(135deg, var(--primary-dark), var(--deep-dark)); padding: 16px; border-radius: 12px; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .wallet-info { display: flex; align-items: center; gap: 12px; }
+        .wallet-info .material-icons { font-size: 28px; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 50%; }
+        .wallet-info span { font-size: 12px; opacity: 0.9; display: block; }
+        .wallet-info h4 { font-size: 18px; margin: 0; }
+        .buy-btn { background: white; color: var(--primary-dark); border: none; padding: 8px 16px; border-radius: 20px; font-weight: 700; cursor: pointer; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* --- Chat Interface (Flexbox for stability, Edge-to-Edge) --- */
+        .chat-screen { display: flex; flex-direction: column; height: 100%; background-color: var(--chat-bg); overflow: hidden; }
+        .chat-header { display: flex; align-items: center; gap: 8px; background: white; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 5; }
+        .chat-header .icon-box { width: 40px; height: 40px; margin-right: 8px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .chat-header .icon-box .material-icons { color: white; font-size: 24px; }
+        .chat-header h4 { font-size: 16px; margin: 0; color: var(--text-main); }
+        .chat-header p { font-size: 12px; color: var(--text-secondary); margin: 0; }
+        .chat-header .back-btn { cursor: pointer; color: var(--text-main); padding: 8px; border-radius: 50%; }
+        
+        /* Highlighted cost text */
+        .cost-highlight { color: var(--danger-color); font-weight: 700; }
+
+        .chat-body { flex-grow: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+        .chat-bubble.received { align-self: flex-start; background: white; color: var(--text-main); border-top-left-radius: 4px; }
+        .chat-bubble.sent { align-self: flex-end; background: var(--primary-color); color: white; border-top-right-radius: 4px; }
+        .chat-time { font-size: 10px; opacity: 0.7; margin-top: 4px; display: block; text-align: right; }
+        
+        /* Auto-hiding Doubt Info Banner */
+        .doubt-info-banner { background: #FFF3E0; color: #E65100; padding: 8px 12px; text-align: center; font-size: 12px; font-weight: 600; border-bottom: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; transition: opacity 0.5s ease, max-height 0.5s ease, padding 0.5s ease, border 0.5s ease; max-height: 40px; overflow: hidden; }
+        .doubt-info-banner.hide { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; border-bottom: none; }
+
+        /* Chat Footer (Emoji tray + Input bar) */
+        .chat-footer { flex-shrink: 0; background: white; box-shadow: 0 -1px 3px rgba(0,0,0,0.1); }
+        .emoji-tray { display: flex; gap: 16px; padding: 8px 16px; overflow-x: auto; border-bottom: 1px solid #eee; }
+        .emoji-tray::-webkit-scrollbar { display: none; }
+        .emoji-tray span { font-size: 20px; cursor: pointer; opacity: 0.8; transition: transform 0.1s; } 
+        .emoji-tray span:active { transform: scale(1.2); opacity: 1; }
+        
+        .chat-input-bar { display: flex; align-items: center; padding: 8px 12px; gap: 8px; }
+        .plus-btn { color: var(--text-secondary); font-size: 28px; cursor: pointer; padding: 4px; border-radius: 50%; transition: background 0.2s; }
+        .plus-btn:active { background: #eee; }
+        .input-wrapper { flex-grow: 1; background: var(--bg-color); border-radius: 20px; padding: 10px 16px; display: flex; align-items: center; }
+        .input-wrapper input { flex-grow: 1; border: none; background: transparent; outline: none; font-family: 'Roboto', sans-serif; font-size: 14px; color: var(--text-main); }
+        .send-btn { width: 40px; height: 40px; background: var(--primary-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,188,212,0.3); transition: transform 0.1s; flex-shrink: 0; }
+        .send-btn:active { transform: scale(0.9); }
+        .send-btn .material-icons { color: white; font-size: 24px; }
+
+        /* --- Bottom Sheet (Buy Plans) --- */
+        .modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; justify-content: center; align-items: flex-end; }
+        .modal-overlay.show { display: flex; }
+        .bottom-sheet { background: white; width: 100%; border-radius: 24px 24px 0 0; padding: 24px 16px 32px; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .sheet-header h3 { font-size: 20px; color: var(--text-main); }
+        .sheet-header .material-icons { cursor: pointer; color: var(--text-secondary); font-size: 24px; padding: 4px; border-radius: 50%; }
+        .sheet-header .material-icons:active { background: #eee; }
+        
+        .plan-card { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1.5px solid #eee; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: border 0.2s, background 0.2s; }
+        .plan-card:active { border-color: var(--primary-color); background: var(--primary-light); }
+        .plan-card.best-value { border-color: var(--primary-color); background: var(--primary-light); position: relative; overflow: hidden; }
+        .plan-details h4 { font-size: 16px; margin: 0; color: var(--text-main); display: flex; align-items: center; }
+        .plan-details p { font-size: 12px; color: var(--text-secondary); margin: 4px 0 0 0; }
+        .plan-price { font-size: 20px; font-weight: 700; color: var(--primary-dark); }
+        .discount-badge { background: var(--online-green); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 700; }
+
+        /* --- My Files Section --- */
+        .files-tabs { display: flex; background: white; border-radius: 12px; padding: 4px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .files-tab { flex-grow: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; color: var(--text-secondary); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .files-tab.active { background: var(--primary-color); color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .storage-card { background: white; padding: 16px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .storage-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .storage-header h4 { font-size: 14px; color: var(--text-main); }
+        .storage-header span { font-size: 12px; color: var(--text-secondary); }
+        .storage-bar { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+        .storage-fill { height: 100%; background: var(--primary-color); width: 15%; border-radius: 4px; }
+
+        .file-item { background: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .file-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0; }
+        .file-icon-box.pdf { background: #FFEBEE; }
+        .file-icon-box.pdf .material-icons { color: #FF5252; }
+        .file-icon-box.img { background: #E3F2FD; }
+        .file-icon-box.img .material-icons { color: #1976D2; }
+        .file-icon-box.offline { background: #E8F5E9; }
+        .file-icon-box.offline .material-icons { color: var(--online-green); }
+        
+        .file-info { flex-grow: 1; display: flex; flex-direction: column; }
+        .file-info h4 { font-size: 14px; color: var(--text-main); margin-bottom: 4px; }
+        .file-info p { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+        .file-badge { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; width: fit-content; }
+        .file-badge.offline { background: #E8F5E9; color: var(--online-green); }
+        .file-badge.cloud { background: #ECEFF1; color: var(--text-secondary); }
+        .file-badge i { font-size: 10px; margin-right: 4px; }
+        
+        .file-action-btn { color: var(--primary-dark); cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
+        .file-action-btn:active { background: var(--primary-light); }
+        .file-action-btn.saved { color: var(--online-green); }
+
+        /* --- Store Grid Styles --- */
+        .store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .store-item { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .store-item .img-placeholder { height: 100px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; }
+        .store-item .img-placeholder .material-icons { font-size: 40px; color: var(--primary-dark); }
+        .store-item .info { padding: 12px; }
+        .store-item h4 { font-size: 14px; margin-bottom: 4px; }
+        .store-item .price { font-size: 14px; font-weight: 700; color: var(--primary-dark); }
+
+        /* Bottom Navigation */
+        .bottom-nav { position: absolute; bottom: 0; left: 0; right: 0; background-color: var(--bottom-nav-bg); display: flex; justify-content: space-around; padding: 8px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 10; height: 60px; box-sizing: border-box; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; padding: 6px 8px; color: var(--text-secondary); cursor: pointer; border-radius: 8px; transition: color 0.2s; }
+        .nav-item.active { color: var(--primary-color); }
+        .nav-item .material-icons { font-size: 22px; margin-bottom: 2px; }
+        .nav-item span { font-size: 11px; font-weight: 500; }
+
+        /* Toast Notification */
+        .toast { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--text-main); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 100; opacity: 0; transition: opacity 0.3s, bottom 0.3s; pointer-events: none; }
+        .toast.show { opacity: 0.9; bottom: 100px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Navigation Drawer -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer(false)"></div>
+        <aside class="app-drawer" id="appDrawer">
+            <div class="drawer-header">
+                <div class="profile-top">
+                    <div class="profile-img-large"><i class="material-icons">person</i></div>
+                    <div class="header-text">
+                        <span class="welcome-text">Welcome back future Pharmacist,</span>
+                        <span class="student-name">Rajesh</span>
+                        <div class="id-row">
+                            <span class="student-id-badge">ID: PHA-2024-001</span>
+                            <div class="copy-icon-btn" onclick="copyStudentId()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="course-selector-box" onclick="showToast('Course/Semester change menu opened!')">
+                    <i class="material-icons">class</i>
+                    <div class="selector-info">
+                        <span class="label">Current Program</span>
+                        <span class="value">B.Pharm - Semester 3</span>
+                    </div>
+                    <i class="material-icons expand-icon">expand_more</i>
+                </div>
+            </div>
+            <div class="drawer-menu">
+                <div class="drawer-item"><i class="material-icons">shopping_bag</i><span>My Orders & Purchases</span></div>
+                <div class="drawer-item"><i class="material-icons">person</i><span>My Profile</span></div>
+                <div class="drawer-item"><i class="material-icons">analytics</i><span>Performance Analytics</span></div>
+                <div class="drawer-item" onclick="openCustomerCareChat()"><i class="material-icons">support_agent</i><span>Help & Support / Raise Doubt</span></div>
+                <div class="drawer-item"><i class="material-icons">share</i><span>Share App & Rate Us</span></div>
+                <div class="drawer-item"><i class="material-icons">description</i><span>Privacy & Terms</span></div>
+            </div>
+            <div class="drawer-footer">
+                <div class="drawer-item logout"><i class="material-icons">logout</i><span>Logout</span></div>
+            </div>
+        </aside>
+
+        <!-- App Bar -->
+        <header class="app-bar">
+            <i class="material-icons icon-btn" onclick="toggleDrawer(true)">menu</i>
+            <h1>Pharmacy Helper</h1>
+            <div class="quick-action-icon" onclick="toggleDropdown(event)">
+                <img src="https://z-cdn-media.chatglm.cn/files/b1a7a416-aa95-44d1-8b36-612791c23929.png?auth_key=1882894169-1ba8dbc6c1de494a96ff361770b620ad-0-0cf332fcb5780e2e58bc2708f0afe8ef" alt="Quick Actions" class="custom-logo">
+            </div>
+            <div class="action-dropdown" id="quickActionDropdown">
+                <div class="dropdown-item"><i class="material-icons">shopping_cart</i><span>My Cart</span></div>
+                <div class="dropdown-item" onclick="switchView('myFilesView', 'Files', document.querySelectorAll('.nav-item')[4])"><i class="material-icons">download</i><span>My Downloads</span></div>
+                <div class="dropdown-item" onclick="openCustomerCareChat()">
+                    <svg viewBox="0 0 24 24"><path d="M12,1C7.03,1 3,5.03 3,10V17A3,3 0 0,0 6,20H9V12H5V10A7,7 0 0,1 19,10V12H15V20H18A3,3 0 0,0 21,17V10C21,5.03 16.97,1 12,1Z" /></svg>
+                    <span>Customer Care</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+            
+            <!-- HOME VIEW -->
+            <div id="homeView" class="view active">
+                <div class="scroll-view">
+                    <div class="greeting-card" id="greetingCard">
+                        <p>Welcome Future pharmacist,</p>
+                        <h2>Rajesh</h2>
+                    </div>
+                    <div class="section-header">
+                        <h3>Announcements</h3>
+                        <span class="see-all" onclick="showToast('Opening all announcements...')">View All</span>
+                    </div>
+                    <div class="announcement-carousel">
+                        <div class="announcement-card">
+                            <div class="card-header"><i class="material-icons">campaign</i><h4>Exam Schedule</h4></div>
+                            <p>The final exam schedule for Pharmacology 101 has been posted. Check notice board.</p>
+                        </div>
+                        <div class="announcement-card">
+                            <div class="card-header"><i class="material-icons">local_shipping</i><h4>Order Dispatched</h4></div>
+                            <p>Your printout order #12345 has been dispatched and will arrive tomorrow.</p>
+                        </div>
+                        <div class="announcement-card">
+                            <div class="card-header"><i class="material-icons">event</i><h4>Guest Lecture</h4></div>
+                            <p>Dr. Sharma will be giving a guest lecture on Clinical Pharmacy this Friday at 4 PM.</p>
+                        </div>
+                    </div>
+                    <div class="grid-container">
+                        <div class="grid-item"><i class="material-icons">edit_note</i><span>Notes</span></div>
+                        <div class="grid-item"><i class="material-icons">school</i><span>Classes</span></div>
+                        <div class="grid-item"><i class="material-icons">help_outline</i><span>Important Qs</span></div>
+                        <div class="grid-item" onclick="switchView('coursesView', 'Courses', document.querySelectorAll('.nav-item')[1])"><i class="material-icons">book</i><span>Courses</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COURSES VIEW -->
+            <div id="coursesView" class="view">
+                <div class="scroll-view">
+                    <div class="course-tabs">
+                        <div class="course-tab active" onclick="switchCourseTab('myCoursesTab', this)">My Courses</div>
+                        <div class="course-tab" onclick="switchCourseTab('exploreCoursesTab', this)">Explore Courses</div>
+                    </div>
+                    <div id="myCoursesTab" class="tab-content active">
+                        <div class="course-card-full">
+                            <div class="course-icon-lg"><i class="material-icons">medication</i></div>
+                            <div class="course-info">
+                                <h4>Pharmacology 101</h4>
+                                <div class="progress-container"><div class="progress-fill" style="width: 75%"></div></div>
+                                <span>75% Complete</span>
+                            </div>
+                            <button class="course-action-btn">Resume</button>
+                        </div>
+                        <div class="course-card-full">
+                            <div class="course-icon-lg"><i class="material-icons">biotech</i></div>
+                            <div class="course-info">
+                                <h4>Anatomy & Physiology</h4>
+                                <div class="progress-container"><div class="progress-fill" style="width: 40%"></div></div>
+                                <span>40% Complete</span>
+                            </div>
+                            <button class="course-action-btn">Resume</button>
+                        </div>
+                    </div>
+                    <div id="exploreCoursesTab" class="tab-content">
+                        <div class="course-card-full">
+                            <div class="course-icon-lg"><i class="material-icons">local_hospital</i></div>
+                            <div class="course-info">
+                                <h4>Clinical Pharmacy</h4>
+                                <p class="explore-meta">Instructor: Dr. Mehta</p>
+                                <span>Starts: Next Monday</span>
+                            </div>
+                            <button class="course-action-btn-outline">Enroll</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHAT LIST VIEW -->
+            <div id="chatView" class="view">
+                <div class="chat-tabs">
+                    <div class="chat-tab active" id="doubtClearTabBtn" onclick="switchChatTab('doubtClearContent', 'doubtClearTabBtn')">Doubt Clear</div>
+                    <div class="chat-tab" id="messageTabBtn" onclick="switchChatTab('messageContent', 'messageTabBtn')">Message</div>
+                </div>
+
+                <!-- Doubt Clear Tab Content -->
+                <div id="doubtClearContent" class="chat-tab-content active">
+                    <!-- Wallet Card -->
+                    <div class="wallet-card">
+                        <div class="wallet-info">
+                            <i class="material-icons">psychology</i>
+                            <div>
+                                <span>Doubt Points Available</span>
+                                <h4 id="walletPoints">5 Points</h4>
+                            </div>
+                        </div>
+                        <button class="buy-btn" onclick="openBuyPointsModal()">+ Buy</button>
+                    </div>
+
+                    <div class="messenger-list">
+                        <div class="messenger-item highlight-chat-item" onclick="switchView('doubtChatView', 'Doubt', document.querySelectorAll('.nav-item')[2])">
+                            <div class="chat-avatar"><i class="material-icons">psychology</i></div>
+                            <div class="chat-content">
+                                <div class="chat-top-row">
+                                    <span class="chat-name">Ask Expert (1 DP/question)</span>
+                                    <span class="chat-time">10:30 AM</span>
+                                </div>
+                                <div class="chat-bottom-row">
+                                    <span class="chat-last-msg">Get your doubts solved instantly!</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="messenger-item">
+                            <div class="chat-avatar"><i class="material-icons">history</i></div>
+                            <div class="chat-content">
+                                <div class="chat-top-row">
+                                    <span class="chat-name">Previous Doubt #1</span>
+                                    <span class="chat-time">Yesterday</span>
+                                </div>
+                                <div class="chat-bottom-row">
+                                    <span class="chat-last-msg">Expert: The mechanism of action is...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Tab Content -->
+                <div id="messageContent" class="chat-tab-content">
+                    <div class="chat-screen">
+                        <div class="chat-body">
+                            <div class="chat-bubble received">Hello<span class="chat-time">10:00 AM</span></div>
+                            <div class="chat-bubble sent">How I can help?<span class="chat-time">10:01 AM</span></div>
+                            <div class="chat-bubble received">Idk<span class="chat-time">10:01 AM</span></div>
+                            <div class="chat-bubble sent">Tell me a joke?<span class="chat-time">10:02 AM</span></div>
+                            <div class="chat-bubble received">Hear about the new restaurant called Karma?<span class="chat-time">10:02 AM</span></div>
+                            <div class="chat-bubble sent">No<span class="chat-time">10:03 AM</span></div>
+                            <div class="chat-bubble received">There's no menu: You get what you deserve.<span class="chat-time">10:03 AM</span></div>
+                            <div class="chat-bubble sent">Haha : D<span class="chat-time">10:04 AM</span></div>
+                            <div class="chat-bubble received">You feel better now?<span class="chat-time">10:04 AM</span></div>
+                            <div class="chat-bubble sent">Yes thank you!<span class="chat-time">10:05 AM</span></div>
+                        </div>
+                        
+                        <div class="chat-footer">
+                            <div class="emoji-tray">
+                                <span onclick="addEmoji('😂', 'messageInput')">😂</span>
+                                <span onclick="addEmoji('❤️', 'messageInput')">❤️</span>
+                                <span onclick="addEmoji('👍', 'messageInput')">👍</span>
+                                <span onclick="addEmoji('🙏', 'messageInput')">🙏</span>
+                                <span onclick="addEmoji('😢', 'messageInput')">😢</span>
+                                <span onclick="addEmoji('😡', 'messageInput')">😡</span>
+                                <span onclick="addEmoji('😊', 'messageInput')">😊</span>
+                                <span onclick="addEmoji('🔥', 'messageInput')">🔥</span>
+                                <span onclick="addEmoji('🎉', 'messageInput')">🎉</span>
+                                <span onclick="addEmoji('✨', 'messageInput')">✨</span>
+                            </div>
+                            <div class="chat-input-bar">
+                                <i class="material-icons plus-btn" onclick="showToast('Opening media upload options...')">add_circle</i>
+                                <div class="input-wrapper">
+                                    <input type="text" id="messageInput" placeholder="Type your message...">
+                                </div>
+                                <div class="send-btn" onclick="showToast('Message sent!')"><i class="material-icons">send</i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOUBT CHAT VIEW -->
+            <div id="doubtChatView" class="view">
+                <div class="chat-screen">
+                    <div class="chat-header">
+                        <i class="material-icons back-btn" onclick="switchView('chatView', 'Chat', document.querySelectorAll('.nav-item')[2])">arrow_back</i>
+                        <div class="icon-box"><i class="material-icons">psychology</i></div>
+                        <div>
+                            <h4>Expert Doubt Clearing</h4>
+                            <!-- Highlighted cost text -->
+                            <p><span id="doubtHeaderPoints">2</span> doubt points available; <span class="cost-highlight">1 question = 1 doubt point</span></p>
+                        </div>
+                    </div>
+                    <!-- Auto-hiding banner -->
+                    <div class="doubt-info-banner" id="doubtInfoBanner">
+                        1 Doubt Point will be charged per question. You can send text, voice, or image.
+                    </div>
+                    
+                    <div class="chat-body">
+                        <div class="chat-bubble received">
+                            Hello Rajesh! Please type your doubt below, or attach an image/voice note. 1 DP will be deducted when you send the question.
+                            <span class="chat-time">10:30 AM</span>
+                        </div>
+                        <div class="chat-bubble sent">
+                            What is the exact mechanism of action of Beta-blockers in hypertension?
+                            <span class="chat-time">10:31 AM</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-footer">
+                        <div class="emoji-tray">
+                            <span onclick="addEmoji('😂', 'doubtInput')">😂</span>
+                            <span onclick="addEmoji('❤️', 'doubtInput')">❤️</span>
+                            <span onclick="addEmoji('👍', 'doubtInput')">👍</span>
+                            <span onclick="addEmoji('🙏', 'doubtInput')">🙏</span>
+                            <span onclick="addEmoji('😢', 'doubtInput')">😢</span>
+                            <span onclick="addEmoji('😡', 'doubtInput')">😡</span>
+                            <span onclick="addEmoji('😊', 'doubtInput')">😊</span>
+                            <span onclick="addEmoji('🔥', 'doubtInput')">🔥</span>
+                            <span onclick="addEmoji('🎉', 'doubtInput')">🎉</span>
+                            <span onclick="addEmoji('✨', 'doubtInput')">✨</span>
+                        </div>
+                        <!-- Removed input-meta text -->
+                        <div class="chat-input-bar">
+                            <i class="material-icons plus-btn" onclick="showToast('Opening media upload options...')">add_circle</i>
+                            <div class="input-wrapper">
+                                <input type="text" id="doubtInput" placeholder="Type your doubt...">
+                            </div>
+                            <div class="send-btn" onclick="handleDoubtSend()"><i class="material-icons">send</i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CUSTOMER CARE CHAT VIEW -->
+            <div id="supportChatView" class="view">
+                <div class="chat-screen">
+                    <div class="chat-header">
+                        <i class="material-icons back-btn" onclick="switchView('chatView', 'Chat', document.querySelectorAll('.nav-item')[2]); switchChatTab('messageContent', 'messageTabBtn');">arrow_back</i>
+                        <div class="icon-box"><i class="material-icons">support_agent</i></div>
+                        <div>
+                            <h4>Customer Care</h4>
+                            <p>Online</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-body">
+                        <div class="chat-bubble received">
+                            Hi Rajesh! Welcome to Pharmacy Helper Support. How can we assist you today?
+                            <span class="chat-time">10:00 AM</span>
+                        </div>
+                        <div class="chat-bubble sent">
+                            Hi, my payment for the printout order failed but money got deducted.
+                            <span class="chat-time">10:05 AM</span></div>
+                        <div class="chat-bubble received">
+                            Don't worry! I have checked your account. The order is successfully placed, and the excess amount will be refunded in 3 days.
+                            <span class="chat-time">10:06 AM</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-footer">
+                        <div class="emoji-tray">
+                            <span onclick="addEmoji('😂', 'supportInput')">😂</span>
+                            <span onclick="addEmoji('❤️', 'supportInput')">❤️</span>
+                            <span onclick="addEmoji('👍', 'supportInput')">👍</span>
+                            <span onclick="addEmoji('🙏', 'supportInput')">🙏</span>
+                            <span onclick="addEmoji('😢', 'supportInput')">😢</span>
+                            <span onclick="addEmoji('😡', 'supportInput')">😡</span>
+                            <span onclick="addEmoji('😊', 'supportInput')">😊</span>
+                            <span onclick="addEmoji('🔥', 'supportInput')">🔥</span>
+                            <span onclick="addEmoji('🎉', 'supportInput')">🎉</span>
+                            <span onclick="addEmoji('✨', 'supportInput')">✨</span>
+                        </div>
+                        <div class="chat-input-bar">
+                            <i class="material-icons plus-btn" onclick="showToast('Opening media upload options...')">add_circle</i>
+                            <div class="input-wrapper">
+                                <input type="text" id="supportInput" placeholder="Type your message...">
+                            </div>
+                            <div class="send-btn" onclick="showToast('Message sent!')"><i class="material-icons">send</i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MY FILES VIEW -->
+            <div id="myFilesView" class="view">
+                <div class="scroll-view">
+                    <div class="storage-card">
+                        <div class="storage-header">
+                            <h4>Local Storage (Offline)</h4>
+                            <span>45 MB used</span>
+                        </div>
+                        <div class="storage-bar"><div class="storage-fill"></div></div>
+                    </div>
+
+                    <div class="files-tabs">
+                        <div class="files-tab active" onclick="switchFileTab('allFilesTab', this)">All Files</div>
+                        <div class="files-tab" onclick="switchFileTab('offlineFilesTab', this)">Offline Saved</div>
+                    </div>
+
+                    <div id="allFilesTab" class="tab-content active">
+                        <div class="file-item">
+                            <div class="file-icon-box pdf"><i class="material-icons">picture_as_pdf</i></div>
+                            <div class="file-info">
+                                <h4>Pharmacology Notes Vol.1</h4>
+                                <p>Purchased • 4.5 MB</p>
+                                <div class="file-badge offline"><i class="material-icons">check_circle</i> Saved Offline</div>
+                            </div>
+                            <i class="material-icons file-action-btn saved" onclick="showToast('Removing offline copy...')">offline_pin</i>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon-box img"><i class="material-icons">image</i></div>
+                            <div class="file-info">
+                                <h4>Anatomy Diagram Sheet</h4>
+                                <p>Downloaded from Course • 2.1 MB</p>
+                                <div class="file-badge cloud"><i class="material-icons">cloud</i> Cloud Only</div>
+                            </div>
+                            <i class="material-icons file-action-btn" onclick="showToast('Saving for offline use...')">file_download</i>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon-box pdf"><i class="material-icons">picture_as_pdf</i></div>
+                            <div class="file-info">
+                                <h4>Printout Receipt #12345</h4>
+                                <p>Auto-saved • 1.2 MB</p>
+                                <div class="file-badge offline"><i class="material-icons">check_circle</i> Saved Offline</div>
+                            </div>
+                            <i class="material-icons file-action-btn saved" onclick="showToast('Removing offline copy...')">offline_pin</i>
+                        </div>
+                    </div>
+
+                    <div id="offlineFilesTab" class="tab-content">
+                        <div class="file-item">
+                            <div class="file-icon-box pdf"><i class="material-icons">picture_as_pdf</i></div>
+                            <div class="file-info">
+                                <h4>Pharmacology Notes Vol.1</h4>
+                                <p>Purchased • 4.5 MB</p>
+                                <div class="file-badge offline"><i class="material-icons">check_circle</i> Saved Offline</div>
+                            </div>
+                            <i class="material-icons file-action-btn saved" onclick="showToast('Removing offline copy...')">offline_pin</i>
+                        </div>
+                        <div class="file-item">
+                            <div class="file-icon-box pdf"><i class="material-icons">picture_as_pdf</i></div>
+                            <div class="file-info">
+                                <h4>Printout Receipt #12345</h4>
+                                <p>Auto-saved • 1.2 MB</p>
+                                <div class="file-badge offline"><i class="material-icons">check_circle</i> Saved Offline</div>
+                            </div>
+                            <i class="material-icons file-action-btn saved" onclick="showToast('Removing offline copy...')">offline_pin</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STORE VIEW -->
+            <div id="storeView" class="view">
+                <div class="scroll-view">
+                    <div class="store-grid">
+                        <div class="store-item">
+                            <div class="img-placeholder"><i class="material-icons">menu_book</i></div>
+                            <div class="info"><h4>Pharma Notes Vol.1</h4><div class="price">₹450</div></div>
+                        </div>
+                        <div class="store-item">
+                            <div class="img-placeholder"><i class="material-icons">print</i></div>
+                            <div class="info"><h4>Printout Service</h4><div class="price">₹2/Page</div></div>
+                        </div>
+                        <div class="store-item">
+                            <div class="img-placeholder"><i class="material-icons">science</i></div>
+                            <div class="info"><h4>Lab Coat</h4><div class="price">₹850</div></div>
+                        </div>
+                        <div class="store-item">
+                            <div class="img-placeholder"><i class="material-icons">local_pharmacy</i></div>
+                            <div class="info"><h4>Medicine Chart</h4><div class="price">₹150</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Buy Points Bottom Sheet -->
+        <div class="modal-overlay" id="buyPointsModal" onclick="closeBuyPointsModal(event)">
+            <div class="bottom-sheet" onclick="event.stopPropagation()">
+                <div class="sheet-header">
+                    <h3>Buy Doubt Points</h3>
+                    <i class="material-icons" onclick="closeBuyPointsModal()">close</i>
+                </div>
+                
+                <div class="plan-card" onclick="processPurchase(1, 3)">
+                    <div class="plan-details">
+                        <h4>1 Doubt Point</h4>
+                        <p>Base Pack</p>
+                    </div>
+                    <div class="plan-price">₹3</div>
+                </div>
+
+                <div class="plan-card" onclick="processPurchase(5, 15)">
+                    <div class="plan-details">
+                        <h4>5 Doubt Points</h4>
+                        <p>Starter Pack</p>
+                    </div>
+                    <div class="plan-price">₹15</div>
+                </div>
+
+                <div class="plan-card best-value" onclick="processPurchase(12, 30)">
+                    <div class="plan-details">
+                        <h4>12 Doubt Points <span class="discount-badge">16% OFF</span></h4>
+                        <p>Best Value for Students</p>
+                    </div>
+                    <div class="plan-price">₹30</div>
+                </div>
+
+                <div class="plan-card" onclick="processPurchase(25, 60)">
+                    <div class="plan-details">
+                        <h4>25 Doubt Points <span class="discount-badge">20% OFF</span></h4>
+                        <p>Exam Prepper Pack</p>
+                    </div>
+                    <div class="plan-price">₹60</div>
+                </div>
+
+                <div class="plan-card" onclick="processPurchase(55, 125)">
+                    <div class="plan-details">
+                        <h4>55 Doubt Points <span class="discount-badge">24% OFF</span></h4>
+                        <p>Semester Pro Pack</p>
+                    </div>
+                    <div class="plan-price">₹125</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification Element -->
+        <div class="toast" id="toast">Message</div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchView('homeView', 'Home', this)"><i class="material-icons">home</i><span>Home</span></div>
+            <div class="nav-item" onclick="switchView('coursesView', 'Courses', this)"><i class="material-icons">menu_book</i><span>Courses</span></div>
+            <div class="nav-item" onclick="switchView('chatView', 'Chat', this)"><i class="material-icons">chat</i><span>Chat</span></div>
+            <div class="nav-item" onclick="switchView('storeView', 'Store', this)"><i class="material-icons">storefront</i><span>Store</span></div>
+            <div class="nav-item" onclick="switchView('myFilesView', 'Files', this)"><i class="material-icons">folder</i><span>My Files</span></div>
+        </nav>
+    </div>
+
+    <script>
+        // Variables
+        let doubtPoints = 5;
+
+        // 1. Auto-hide greeting after 3 seconds
+        setTimeout(() => {
+            const greeting = document.getElementById('greetingCard');
+            if(greeting) greeting.classList.add('hide');
+        }, 3000);
+
+        // 2. Drawer Toggle Logic
+        function toggleDrawer(open) {
+            const drawer = document.getElementById('appDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            if (open) { drawer.classList.add('open'); overlay.classList.add('active'); } 
+            else { drawer.classList.remove('open'); overlay.classList.remove('active'); }
+        }
+
+        // 3. Dropdown Toggle Logic
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            document.getElementById('quickActionDropdown').classList.toggle('show');
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.quick-action-icon')) {
+                const dropdown = document.getElementById('quickActionDropdown');
+                if(dropdown) dropdown.classList.remove('show');
+            }
+        }
+
+        // Variables to remember the last active Chat Tab
+        let activeChatTabContentId = 'doubtClearContent';
+        let activeChatTabBtnId = 'doubtClearTabBtn';
+
+        // 4. View Switching Logic (Footer Navigation)
+        function switchView(viewId, pageName, navElement) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if(navElement) navElement.classList.add('active');
+            
+            const mainContent = document.querySelector('.content');
+            if(mainContent) mainContent.scrollTop = 0;
+
+            // If opening Chat View, restore the last active chat tab
+            if (viewId === 'chatView') {
+                document.querySelectorAll('.chat-tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(activeChatTabContentId).classList.add('active');
+                
+                document.querySelectorAll('.chat-tab').forEach(b => b.classList.remove('active'));
+                document.getElementById(activeChatTabBtnId).classList.add('active');
+            }
+
+            // If opening Doubt Chat View, trigger auto-hide for the info banner
+            if (viewId === 'doubtChatView') {
+                updateWalletUI(); // Ensure header points are up to date
+                const banner = document.getElementById('doubtInfoBanner');
+                if(banner) {
+                    banner.classList.remove('hide'); // Show it first
+                    setTimeout(() => {
+                        banner.classList.add('hide'); // Hide after 3 seconds
+                    }, 3000);
+                }
+            }
+        }
+
+        // 5. Course Tab Switching Logic
+        function switchCourseTab(tabId, element) {
+            document.querySelectorAll('#coursesView .tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.course-tab').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // 6. Chat Tab Switching Logic
+        function switchChatTab(contentId, btnId) {
+            document.querySelectorAll('.chat-tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(contentId).classList.add('active');
+            document.querySelectorAll('.chat-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(btnId).classList.add('active');
+            activeChatTabContentId = contentId;
+            activeChatTabBtnId = btnId;
+        }
+
+        // 7. File Tab Switching Logic
+        function switchFileTab(tabId, element) {
+            document.querySelectorAll('#myFilesView .tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.files-tab').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        // 8. Deep Link to Customer Care Chat
+        function openCustomerCareChat() {
+            toggleDrawer(false);
+            const dropdown = document.getElementById('quickActionDropdown');
+            if(dropdown) dropdown.classList.remove('show');
+            switchView('supportChatView', 'Chat', document.querySelectorAll('.nav-item')[2]);
+            activeChatTabContentId = 'messageContent';
+            activeChatTabBtnId = 'messageTabBtn';
+        }
+
+        // 9. Copy Student ID Logic
+        function copyStudentId() {
+            const text = "PHA-2024-001";
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast("Student ID Copied!")).catch(err => showToast("Failed to copy."));
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try { document.execCommand('copy'); showToast("Student ID Copied!"); } catch (err) { showToast("Failed to copy."); }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // 10. Emoji Add Logic
+        function addEmoji(emoji, inputId) {
+            const input = document.getElementById(inputId);
+            if(input) {
+                input.value += emoji;
+                input.focus();
+            }
+        }
+
+        // 11. Doubt Points & Send Logic
+        function updateWalletUI() {
+            document.getElementById('walletPoints').innerText = doubtPoints + " Points";
+            const headerPoints = document.getElementById('doubtHeaderPoints');
+            if(headerPoints) headerPoints.innerText = doubtPoints;
+        }
+
+        function openBuyPointsModal() {
+            document.getElementById('buyPointsModal').classList.add('show');
+        }
+
+        function closeBuyPointsModal(event) {
+            if(event) event.stopPropagation();
+            document.getElementById('buyPointsModal').classList.remove('show');
+        }
+
+        function processPurchase(points, amount) {
+            // Simulate payment success
+            doubtPoints += points;
+            updateWalletUI();
+            closeBuyPointsModal();
+            showToast(`Purchase successful! ${points} DP added for ₹${amount}.`);
+        }
+
+        function handleDoubtSend() {
+            const input = document.getElementById('doubtInput');
+            if(input.value.trim() === '') { 
+                showToast("Please type your doubt first."); 
+                return; 
+            }
+            
+            if(doubtPoints > 0) {
+                doubtPoints--;
+                updateWalletUI();
+                showToast("Doubt sent! 1 DP deducted.");
+                input.value = '';
+            } else {
+                showToast("No DP left! Please buy points.");
+                openBuyPointsModal();
+            }
+        }
+
+        // 12. Toast Notification Logic
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2000);
+        }
+
+        // Initial UI update
+        updateWalletUI();
+    </script>
+</body>
+</html>
