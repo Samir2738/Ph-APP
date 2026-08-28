@@ -1,0 +1,25 @@
+{
+  "name": "Pharmacy Helper",
+  "short_name": "PharmaHelper",
+  "description": "Pharmacy study notes, courses, doubt clearing, and recruitment prep platform.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F9FA",
+  "theme_color": "#00BCD4",
+  "icons": [
+    {
+      "src": "https://z-cdn-media.chatglm.cn/files/b1a7a416-aa95-44d1-8b36-612791c23929.png?auth_key=1882894169-1ba8dbc6c1de494a96ff361770b620ad-0-0cf332fcb5780e2e58bc2708f0afe8ef",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://z-cdn-media.chatglm.cn/files/b1a7a416-aa95-44d1-8b36-612791c23929.png?auth_key=1882894169-1ba8dbc6c1de494a96ff361770b620ad-0-0cf332fcb5780e2e58bc2708f0afe8ef",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
